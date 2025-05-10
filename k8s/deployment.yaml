@@ -1,21 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: java-app
-  namespace: NAMESPACE_PLACEHOLDER
+  name: my-app
+  labels:
+    app: my-app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: java-app
+      app: my-app
   template:
     metadata:
       labels:
-        app: java-app
+        app: my-app
     spec:
       containers:
-      - name: java-app
-        image: IMAGE_PLACEHOLDER
-        ports:
-        - containerPort: 8080
+        - name: my-app
+          image: "${FULL_IMAGE_NAME}"  # This is the image pushed to ECR
+          ports:
+            - containerPort: 8080
+
 
