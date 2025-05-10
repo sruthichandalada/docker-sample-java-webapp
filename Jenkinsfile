@@ -40,7 +40,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                withCredentials([file(credentialsId: 'kube-config', variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: 'kube-config-id', variable: 'KUBECONFIG')]) {
                     script {
                         ['dev', 'test', 'prod'].each { ns ->
                             sh """
