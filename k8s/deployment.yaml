@@ -16,8 +16,9 @@ spec:
     spec:
       containers:
         - name: my-app
-          image: "${FULL_IMAGE_NAME}"  # This is the image pushed to ECR
+          image: "${FULL_IMAGE_NAME}"  # Directly use the built and pushed image
           ports:
             - containerPort: 8080
+
 
 
