@@ -1,5 +1,9 @@
 pipeline {
     agent { label 'tomcat' }
+    
+    parameters {
+        choice(name: 'NAMESPACE', choices: ['dev', 'test', 'prod'], description: 'Select the Kubernetes namespace to deploy to')      //using choice parameters to deploy the application in different ns
+    }
 
     environment {
         REPO_URL = 'https://github.com/sruthichandalada/docker-sample-java-webapp.git'
@@ -43,13 +47,16 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kube-config-id', variable: 'KUBECONFIG')]) {
-                    script {
-                        // Directly deploy to the 3 namespaces
-                        ['dev', 'test', 'prod'].each { ns ->
-                            sh """
-                                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/deployment.yaml -n ${ns}
-                                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/service.yaml -n ${ns}
-                            """
+                    sh '''
+                       export KUBECONFIG=$KUBECONFIG
+                       echo "Deploying to namespace: ${NAMESPACE}"
+
+                       # Replace image placeholder
+                       sed -i "s|IMAGE_PLACEHOLDER|${ECR_REGISTRY}:${IMAGE_TAG}|g" k8s/deployment.yaml        
+
+                       # Apply both deployment and service manifests
+                       kubectl apply -n ${NAMESPACE} -f k8s/
+                       '''
                         }
                     }
                 }
