@@ -1,24 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app
-  labels:
-    app: my-app
+  name: app-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: my-app
+      app: app
   template:
     metadata:
       labels:
-        app: my-app
+        app: app
     spec:
       containers:
-        - name: my-app
-          image: "${FULL_IMAGE_NAME}"  # Directly use the built and pushed image
-          ports:
-            - containerPort: 8080
+      - name: app
+        image: IMAGE_PLACEHOLDER   #this pattern will be replaced by the image that i build in the pipeline with the sed command in the pipeline
+        ports:
+        - containerPort: 8080
 
 
 
