@@ -9,6 +9,8 @@ pipeline {
         ACCOUNT_ID = '881490114731'
         ECR_REGISTRY = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         FULL_IMAGE_NAME = "${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+        KUBE_CONFIG = 'kube-config-id' // Jenkins credentials ID
+
     }
 
     stages {
@@ -55,4 +57,5 @@ pipeline {
         }
     }
 }
+
 
