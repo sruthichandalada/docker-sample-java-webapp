@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: "${FULL_IMAGE_NAME}"  # This is the image pushed to ECR
+        image: IMAGE_PLACEHOLDER   #this pattern will be replaced by the image that i build in the pipeline with the sed command in the pipeline
         ports:
         - containerPort: 8080
 
