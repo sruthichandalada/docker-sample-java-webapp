@@ -43,11 +43,12 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'kube-config-id', variable: 'KUBECONFIG')]) {
                     script {
-                        // Directly deploy to the 3 namespaces
                         ['dev', 'test', 'prod'].each { ns ->
                             sh """
-                                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/deployment.yaml -n ${ns}
-                                kubectl --kubeconfig=$KUBECONFIG apply -f k8s/services.yaml -n ${ns}
+                                sed 's|IMAGE_PLACEHOLDER|${FULL_IMAGE_NAME}|' k8s/deployment.yaml | \
+                                sed 's|NAMESPACE_PLACEHOLDER|${ns}|' | kubectl --kubeconfig=$KUBECONFIG apply -f -
+                                
+                                sed 's|NAMESPACE_PLACEHOLDER|${ns}|' k8s/services.yaml | kubectl --kubeconfig=$KUBECONFIG apply -f -
                             """
                         }
                     }
@@ -56,5 +57,6 @@ pipeline {
         }
     }
 }
+
 
 
