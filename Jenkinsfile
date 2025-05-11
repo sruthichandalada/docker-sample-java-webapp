@@ -1,9 +1,5 @@
 pipeline {
     agent { label 'tomcat' }
-    
-    parameters {
-        choice(name: 'NAMESPACE', choices: ['dev', 'test', 'prod'], description: 'Select the Kubernetes namespace to deploy to')      //using choice parameters to deploy the application in different ns
-    }
 
     environment {
         REPO_URL = 'https://github.com/sruthichandalada/docker-sample-java-webapp.git'
@@ -14,7 +10,6 @@ pipeline {
         ECR_REGISTRY = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         FULL_IMAGE_NAME = "${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
         KUBE_CONFIG = 'kube-config-id' // Jenkins credentials ID
-
     }
 
     stages {
@@ -47,16 +42,14 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: 'kube-config-id', variable: 'KUBECONFIG')]) {
-                    sh '''
-                       export KUBECONFIG=$KUBECONFIG
-                       echo "Deploying to namespace: ${NAMESPACE}"
-
-                       # Replace image placeholder
-                       sed -i "s|IMAGE_PLACEHOLDER|${ECR_REGISTRY}:${IMAGE_TAG}|g" k8s/deployment.yaml        
-
-                       # Apply both deployment and service manifests
-                       kubectl apply -n ${NAMESPACE} -f k8s/
-                       '''
+                    script {
+                        ['dev', 'test', 'prod'].each { ns ->
+                            sh """
+                                sed 's|IMAGE_PLACEHOLDER|${FULL_IMAGE_NAME}|' k8s/deployment.yaml | \
+                                sed 's|NAMESPACE_PLACEHOLDER|${ns}|' | kubectl --kubeconfig=$KUBECONFIG apply -f -
+                                
+                                sed 's|NAMESPACE_PLACEHOLDER|${ns}|' k8s/service.yaml | kubectl --kubeconfig=$KUBECONFIG apply -f -
+                            """
                         }
                     }
                 }
