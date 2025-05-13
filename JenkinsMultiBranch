@@ -43,11 +43,11 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: "${KUBE_CONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
-                    sh """
+                    sh '''
                         export KUBECONFIG=$KUBECONFIG
                         sed "s|IMAGE_PLACEHOLDER|${ECR_REPO}:${IMAGE_TAG}|" k8s/deployment.yaml | kubectl apply -n ${NAMESPACE} -f -
                         kubectl apply -n ${NAMESPACE} -f k8s/services.yaml
-                    """
+                    '''
                 }
             }
         }
