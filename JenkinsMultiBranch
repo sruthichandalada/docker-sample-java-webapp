@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'tomcat' }
 
     environment {
         AWS_REGION = 'ap-south-1'
@@ -55,3 +55,4 @@ pipeline {
         }
     }
 }
+
