@@ -5,6 +5,7 @@ pipeline {
         AWS_REGION = 'ap-south-1'
         ECR_REPO = '881490114731.dkr.ecr.ap-south-1.amazonaws.com/jan2025'
         IMAGE_TAG = "v${BUILD_NUMBER}"
+        GIT_REPO = 'https://github.com/sruthichandalada/docker-sample-java-webapp.git'
         KUBE_CONFIG_CREDENTIAL_ID = 'kube-config-id'
     }
 
