@@ -14,16 +14,16 @@ pipeline {
             steps {
                 script {
                     if (env.BRANCH_NAME in ['dev', 'test', 'prod']) {
-                       env.NAMESPACE = env.BRANCH_NAME
-                       echo "Deploying to namespace: ${env.NAMESPACE}"
-                     }
+                        env.NAMESPACE = env.BRANCH_NAME
+                        echo "Deploying to namespace: ${env.NAMESPACE}"
+                    }
                 }
             }
         }
 
         stage('Checkout Code') {
             steps {
-                 git url: "${GIT_REPO}"
+                git url: "${GIT_REPO}"
             }
         }
 
@@ -43,11 +43,23 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: "${KUBE_CONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
-                    sh '''
-                        export KUBECONFIG=$KUBECONFIG
-                        sed "s|IMAGE_PLACEHOLDER|${ECR_REPO}:${IMAGE_TAG}|" k8s/deployment.yaml | kubectl apply -n ${NAMESPACE} -f -
-                        kubectl apply -n ${NAMESPACE} -f k8s/services.yaml
-                    '''
+                    script {
+                        def nodePort = ''
+                        if (env.NAMESPACE == 'dev') {
+                            nodePort = '30080'
+                        } else if (env.NAMESPACE == 'test') {
+                            nodePort = '30081'
+                        } else if (env.NAMESPACE == 'prod') {
+                            nodePort = '30082'
+                        }
+
+                        sh '''
+                            export KUBECONFIG=$KUBECONFIG
+                            echo "Deploying to namespace: ${env.NAMESPACE} with nodePort ${nodePort}"
+                            sed "s|IMAGE_PLACEHOLDER|${ECR_REPO}:${IMAGE_TAG}|" k8s/deployment.yaml | kubectl apply -n ${NAMESPACE} -f -
+                            sed "s|NODEPORT_PLACEHOLDER|${nodePort}|" k8s/services.yaml | kubectl apply -n ${NAMESPACE} -f -
+                        '''
+                    }
                 }
             }
         }
