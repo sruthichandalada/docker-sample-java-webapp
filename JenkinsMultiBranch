@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'ap-south-1'
+        ECR_REPO = '881490114731.dkr.ecr.ap-south-1.amazonaws.com/jan2025'
+        IMAGE_TAG = "v${BUILD_NUMBER}"
+        KUBE_CONFIG_CREDENTIAL_ID = 'kube-config-id'
+    }
+
+    stages {
+        stage('Setup Namespace') {
+            steps {
+                script {
+                    if (env.BRANCH_NAME in ['dev', 'test', 'prod']) {
+                       env.NAMESPACE = env.BRANCH_NAME
+                       echo "Deploying to namespace: ${env.NAMESPACE}"
+                     }
+                }
+            }
+        }
+
+        stage('Checkout Code') {
+            steps {
+                 git url: "${GIT_REPO}"
+            }
+        }
+
+        stage('Build & Push Image') {
+            steps {
+                script {
+                    sh """
+                        docker build -t ${ECR_REPO}:${IMAGE_TAG} .
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin ${ECR_REPO}
+                        docker push ${ECR_REPO}:${IMAGE_TAG}
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withCredentials([file(credentialsId: "${KUBE_CONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
+                    sh """
+                        export KUBECONFIG=$KUBECONFIG
+                        sed "s|IMAGE_PLACEHOLDER|${ECR_REPO}:${IMAGE_TAG}|" k8s/deployment.yaml | kubectl apply -n ${NAMESPACE} -f -
+                        kubectl apply -n ${NAMESPACE} -f k8s/services.yaml
+                    """
+                }
+            }
+        }
+    }
+}
