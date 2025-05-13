@@ -12,6 +12,8 @@ spec:
       labels:
         app: app
     spec:
+      imagePullSecrets:
+        - name: ecr-creds   # this must match the name of your docker-registry secret
       containers:
       - name: app
         image: IMAGE_PLACEHOLDER   #this pattern will be replaced by the image that i build in the pipeline with the sed command in the pipeline
