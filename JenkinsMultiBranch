@@ -1,22 +1,20 @@
 pipeline {
-    agent { label 'tomcat' }
+    agent any
 
     environment {
         AWS_REGION = 'ap-south-1'
         ECR_REPO = '881490114731.dkr.ecr.ap-south-1.amazonaws.com/jan2025'
         IMAGE_TAG = "v${BUILD_NUMBER}"
-        GIT_REPO = 'https://github.com/sruthichandalada/docker-sample-java-webapp.git'
         KUBE_CONFIG_CREDENTIAL_ID = 'kube-config-id'
+        GIT_REPO = 'https://github.com/sruthichandalada/docker-sample-java-webapp.git'
     }
 
     stages {
-        stage('Setup Namespace') {
+        stage('Set Namespace') {
             steps {
                 script {
-                    if (env.BRANCH_NAME in ['dev', 'test', 'prod']) {
-                        env.NAMESPACE = env.BRANCH_NAME
-                        echo "Deploying to namespace: ${env.NAMESPACE}"
-                    }
+                    env.NAMESPACE = env.BRANCH_NAME
+                    echo "Namespace set to: ${env.NAMESPACE}"
                 }
             }
         }
@@ -27,13 +25,12 @@ pipeline {
             }
         }
 
-        stage('Build & Push Image') {
+        stage('Build & Push Docker Image') {
             steps {
                 script {
                     sh """
                         docker build -t ${ECR_REPO}:${IMAGE_TAG} .
-                        aws ecr get-login-password --region ${AWS_REGION} | \
-                        docker login --username AWS --password-stdin ${ECR_REPO}
+                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
                         docker push ${ECR_REPO}:${IMAGE_TAG}
                     """
                 }
@@ -43,23 +40,16 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(credentialsId: "${KUBE_CONFIG_CREDENTIAL_ID}", variable: 'KUBECONFIG')]) {
-                    script {
-                        def nodePort = ''
-                        if (env.NAMESPACE == 'dev') {
-                            nodePort = '30080'
-                        } else if (env.NAMESPACE == 'test') {
-                            nodePort = '30081'
-                        } else if (env.NAMESPACE == 'prod') {
-                            nodePort = '30082'
-                        }
+                    sh '''
+                        export KUBECONFIG=$KUBECONFIG
+                        echo "Deploying to namespace: $NAMESPACE"
 
-                        sh '''
-                            export KUBECONFIG=$KUBECONFIG
-                            echo "Deploying to namespace: ${env.NAMESPACE} with nodePort ${nodePort}"
-                            sed "s|IMAGE_PLACEHOLDER|${ECR_REPO}:${IMAGE_TAG}|" k8s/deployment.yaml | kubectl apply -n ${NAMESPACE} -f -
-                            sed "s|NODEPORT_PLACEHOLDER|${nodePort}|" k8s/services.yaml | kubectl apply -n ${NAMESPACE} -f -
-                        '''
-                    }
+                        # Apply Deployment with substituted image
+                        sed "s|IMAGE_PLACEHOLDER|'"$ECR_REPO:$IMAGE_TAG"'|" k8s/deployment.yaml | kubectl apply -n $NAMESPACE -f -
+
+                        # Apply branch-specific service YAML
+                        kubectl apply -n $NAMESPACE -f k8s/service-$NAMESPACE.yaml
+                    '''
                 }
             }
         }
