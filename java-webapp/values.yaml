@@ -1,0 +1,17 @@
+image:
+  repository: sruthichandalada/docker-sample-java-webapp
+  tag: latest
+
+replicaCount: 2
+
+containerPort: 8080
+
+service:
+  port: 80
+
+ingress:
+  enabled: true
+  host: java.local
+  ingressClassName: nginx
+  path: /
+  pathType: Prefix
