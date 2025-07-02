@@ -1,5 +1,5 @@
 image:
-  repository: sruthichandalada/docker-sample-java-webapp
+  repository: sruthic789/jan2025
   tag: latest
 
 replicaCount: 2
