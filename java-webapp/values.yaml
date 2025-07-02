@@ -1,7 +1,19 @@
+image:
+  repository: sruthic789/jan2025
+  tag: latest
+
+replicaCount: 2
+
+containerPort: 8080
+
+service:
+  port: 80
+
 ingress:
   enabled: true
   ingressClassName: nginx
   path: /
   pathType: Prefix
+
   
 
