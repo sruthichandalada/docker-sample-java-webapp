@@ -29,7 +29,7 @@ pipeline {
 
     stage('Deploy using Helm') {
       steps {
-        withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+        withCredentials([file(credentialsId: 'kube-config-id', variable: 'KUBECONFIG_FILE')]) {
           sh '''
             export KUBECONFIG=$KUBECONFIG_FILE
             helm upgrade --install $HELM_RELEASE_NAME $HELM_CHART_DIR --namespace $KUBE_NAMESPACE --create-namespace
